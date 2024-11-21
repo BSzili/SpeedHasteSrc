@@ -15,6 +15,10 @@ PUBLIC int PIX_LoadPCX(const char* file, unsigned char *outpix, unsigned char * 
    int            i, w, h;
    unsigned char  buf[1028];
    long pos;
+#ifdef __AMIGA__
+   FILE *fp;
+   #define OUTB(x) do { *outpix++ = (x); } while(0)
+#endif
 
    fp = JCLIB_Open(file);
    if( !fp ) {

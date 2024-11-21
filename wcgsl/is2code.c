@@ -33,6 +33,16 @@ PUBLIC IS2_PSprite IS2_Load(const char *fname) {
         JCLIB_Close(f);
         return NULL;
     }
+#ifdef __AMIGA__
+	h.w = BSwapWord(h.w);
+	h.h = BSwapWord(h.h);
+	h.dx = BSwapWord(h.dx);
+	h.dy = BSwapWord(h.dy);
+	h.xratio = BSwapWord(h.xratio);
+	h.yratio = BSwapWord(h.yratio);
+	h.flags = BSwapDword(h.flags);
+	h.len = BSwapDword(h.len);
+#endif
     if (h.flags & IS2F_HORIZONTAL)
         n = h.h;
     else

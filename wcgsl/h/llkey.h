@@ -27,9 +27,15 @@
 #define BIOS_KeyStart (((word *)0x41A)[0])
 #define BIOS_KeyEnd   (((word *)0x41A)[1])
 
+#ifdef __AMIGA__
+#define LLK_BIOSkbhit()
+#define LLK_BIOSWaitKey()
+#define LLK_BIOSFlush()
+#else
 #define LLK_BIOSkbhit()   (BIOS_KeyStart != BIOS_KeyEnd)
 #define LLK_BIOSWaitKey() {for (;!LLK_BIOSkbhit(););}
 #define LLK_BIOSFlush()   (BIOS_KeyStart = BIOS_KeyEnd)
+#endif
 
     // Index this array based on the kXXXXX macros defined below.
     // When an element is TRUE, that key is being held down.

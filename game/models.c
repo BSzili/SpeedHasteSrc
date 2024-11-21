@@ -41,7 +41,11 @@ PUBLIC bool MDL_InitCircuits(void) {
         ntok = STRP_SplitLine(tok, SIZEARRAY(tok), line);
         if (ntok <= 0)
             continue;
+#ifdef __AMIGA__
+        if (strncmp(tok[0], "End", 3) == 0)
+#else
         if (stricmp(tok[0], "End") == 0)
+#endif
             break;
         if (stricmp(tok[0], "Circuit") == 0)
             n++;
@@ -133,7 +137,11 @@ PUBLIC bool MDL_InitCars(void) {
         ntok = STRP_SplitLine(tok, SIZEARRAY(tok), line);
         if (ntok <= 0)
             continue;
+#ifdef __AMIGA__
+        if (strncmp(tok[0], "End", 3) == 0)
+#else
         if (stricmp(tok[0], "End") == 0)
+#endif
             break;
         if (stricmp(tok[0], "Car") == 0)
             n++;

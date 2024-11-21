@@ -80,7 +80,11 @@ PRIVATE byte CalcChecksum(COM_PPacket p) {
     s = (byte*)p;
 //    c = s[0] + s[1] + s[2] + s[3] + p->len;
     c = 0;
+#ifdef __AMIGA__
+    for (i = 6; i < p->header.len; i++)
+#else
     for (i = 6; i < p->len; i++)
+#endif
         c += s[i]+0x37;
     return c;
 }
@@ -229,10 +233,17 @@ PUBLIC int  COM_GetPacket(COM_PPacket p) {
                 // Search for the most ancient packet.
             for (i = 0; i < NUMINPACKETS; i++)
                 if (!IPX_PACKET(IPXPackets,i)->ecb.inuse) {
+#ifdef __AMIGA__
+                    if (((COM_PPacket)IPX_PACKET(IPXPackets,i)->buf)->header.time < mintime) {
+                        mintime = ((COM_PPacket)(IPX_PACKET(IPXPackets,i)->buf))->header.time;
+                        q = IPX_PACKET(IPXPackets,i);
+                    }
+#else
                     if (((COM_PPacket)IPX_PACKET(IPXPackets,i)->buf)->time < mintime) {
                         mintime = ((COM_PPacket)(IPX_PACKET(IPXPackets,i)->buf))->time;
                         q = IPX_PACKET(IPXPackets,i);
                     }
+#endif
                 }
                 // Was there any inbound packet?
             if (q == NULL)
@@ -257,11 +268,19 @@ PUBLIC int  COM_GetPacket(COM_PPacket p) {
             else                   return j + 1;
         }
     } else if (COM_Type == COMT_SERIAL) {
+#ifdef __AMIGA__
+        if (SER_ReadBlock(&SerChannel, (void*)&p->header.len, sizeof(*p)-sizeof(p->header.time)) <= 0)
+#else
         if (SER_ReadBlock(&SerChannel, (void*)&p->len, sizeof(*p)-sizeof(p->time)) <= 0)
+#endif
 //        if (SER_ReadBlock(&SerChannel, (void*)&p->len, p->len-sizeof(p->time)) <= 0)
 //        if (SER_ReadBlock(&SerChannel, (void*)&p->time, p->len) <= 0)
             return -1;
+#ifdef __AMIGA__
+        if (CalcChecksum(p) != p->header.checksum)
+#else
         if (CalcChecksum(p) != p->checksum)
+#endif
             return -2;
 //        p->time = COM_Links[0].nrec++;
         return COM_NLinks;
@@ -287,11 +306,20 @@ PUBLIC bool COM_SendPacket(int nlink, COM_PPacket p) {
             IPX_InitOutPacket(q, NULL, &COM_Links[nlink-1].ipxadr, IPXAddress.socket);
 //            p->time = COM_Links[nlink-1].nsend++;
         }
+#ifdef __AMIGA__
+        memcpy(q->buf, p, p->header.len);
+#else
         memcpy(q->buf, p, p->len);
+#endif
         IPX_SendPacket(&IPX_PACKET(q,0)->ecb);
     } else if (COM_Type == COMT_SERIAL) {
+#ifdef __AMIGA__
+        p->header.checksum = CalcChecksum(p);
+        SER_WriteBlock(&SerChannel, (void*)&p->header.len, p->header.len-sizeof(p->header.time));
+#else
         p->checksum = CalcChecksum(p);
         SER_WriteBlock(&SerChannel, (void*)&p->len, p->len-sizeof(p->time));
+#endif
 //        SER_WriteBlock(&SerChannel, (void*)&p->time, p->len);
 //        if (p->time &1)
             SER_StreamTransmit(&SerChannel);

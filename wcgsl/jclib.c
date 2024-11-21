@@ -139,11 +139,19 @@ bool JCLIB_Init(const char *name)
     if (l <= 16) goto Error;
     fseek(f, -16, SEEK_END);
     if (fread(&n, 1, 4, f) != 4) goto Error;
+#ifdef __AMIGA__
+	n = BSwapDword(n);
+#endif
     if (n != JCLIB_Magic) goto Error;
 
     if (fread(&Files[NFiles].nfiles,	 1, 4, f) != 4) goto Error;
     if (fread(&Files[NFiles].realnfiles, 1, 4, f) != 4) goto Error;
     if (fread(&Files[NFiles].lastoffset, 1, 4, f) != 4) goto Error;
+#ifdef __AMIGA__
+	Files[NFiles].nfiles = BSwapDword(Files[NFiles].nfiles);
+	Files[NFiles].realnfiles = BSwapDword(Files[NFiles].realnfiles);
+	Files[NFiles].lastoffset = BSwapDword(Files[NFiles].lastoffset);
+#endif
 
     fseek(f, -Files[NFiles].lastoffset, SEEK_END);
     Files[NFiles].lastoffset = l - Files[NFiles].lastoffset;
@@ -152,6 +160,12 @@ bool JCLIB_Init(const char *name)
     if (Files[NFiles].dir == NULL) goto Error;
     l = fread(Files[NFiles].dir, 1, sizeof(JCLIB_TLFDirEntry) * Files[NFiles].nfiles, f);
     if (l != sizeof(JCLIB_TLFDirEntry) * Files[NFiles].nfiles) goto Error;
+#ifdef __AMIGA__
+	for (n = 0; n < Files[NFiles].nfiles; n++) {
+		Files[NFiles].dir[n].offset = BSwapDword(Files[NFiles].dir[n].offset);
+		Files[NFiles].dir[n].size = BSwapDword(Files[NFiles].dir[n].size);
+	}
+#endif
 
     for (n = 0; n < Files[NFiles].nfiles; n++)
         Files[NFiles].dir[n].offset =
@@ -204,7 +218,11 @@ sint32 JCLIB_FileSize(const char *name)
 }
 
 
+#ifdef __AMIGA__
+sint32 JCLIB_Load(const char *name, void *buffer, sint32 maxsize)
+#else
 sint32 JCLIB_Load(const char *name, char *buffer, sint32 maxsize)
+#endif
 {
     sint32 i, j;
     const char *p;
@@ -267,9 +285,13 @@ PUBLIC FILE  *JCLIB_OpenText(const char *name)
     for (j = NFiles-1; j >= 0; j--) {
     	for (i = 0; i < Files[j].nfiles; i++) {
     	    if (CmpStr(name, Files[j].dir[i].name)) {
+#ifdef __AMIGA__
+				f = Files[j].handle;
+#else
                 int h = dup(fileno(Files[j].handle));
                 setmode(h, O_TEXT);
                 f = fdopen(h, "rt");
+#endif
                 if (f != NULL) {
                     fseek(f, Files[j].dir[i].offset, SEEK_SET);
                 }

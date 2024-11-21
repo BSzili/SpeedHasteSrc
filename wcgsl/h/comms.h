@@ -27,7 +27,11 @@ typedef struct {
 } COM_TPacketHeader, *COM_PPacketHeader;
 
 typedef struct {
+#ifdef __AMIGA__
+    COM_TPacketHeader header;
+#else
     COM_TPacketHeader;
+#endif
     byte  data[MAXPACKETSIZE-sizeof(COM_TPacketHeader)];
 } COM_TPacket, *COM_PPacket;
 

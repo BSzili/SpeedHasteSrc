@@ -134,6 +134,23 @@ PUBLIC int NET_ContactPlayers(int *racemode) {
         }
         LLK_LastScan = 0;
         if (j >= 30) {  // Send packets every 30 ticks.
+#ifdef __AMIGA__
+            memcpy(p.sync.addr, COM_MyAddress.addr, 6);
+            p.sync.command = NETC_SYNC;
+            p.p.header.len  = sizeof(NET_TSyncPacket);
+            p.p.header.time = 0;
+            p.sync.nodenum = NET_NodeData[0].nodenum;
+            p.sync.tracknum = GL_SelCircuit;
+            p.sync.cartype  = GL_CarType;
+            p.sync.racelaps = (sint8)(GL_RaceLaps & 0x3F) | (0x80*GL_TimedRace);
+            p.sync.seed     = GL_Seed;
+            p.sync.racemode = *racemode;
+            p.sync.kup    = NET_NodeData[0].kup;
+            p.sync.kdn    = NET_NodeData[0].kdn;
+            p.sync.klt    = NET_NodeData[0].klt;
+            p.sync.krt    = NET_NodeData[0].krt;
+            p.sync.kge    = NET_NodeData[0].kge;
+#else
             memcpy(p.addr, COM_MyAddress.addr, 6);
             p.command = NETC_SYNC;
             p.len  = sizeof(NET_TSyncPacket);
@@ -149,15 +166,23 @@ PUBLIC int NET_ContactPlayers(int *racemode) {
             p.klt    = NET_NodeData[0].klt;
             p.krt    = NET_NodeData[0].krt;
             p.kge    = NET_NodeData[0].kge;
+#endif
 
             COM_SendPacket(0, &p.p);
             if (!NET_Slave) {
                 for (i = 1; i <= COM_MaxLinks; i++) {
                     if (COM_Links[i-1].type == COM_Type) {
+#ifdef __AMIGA__
+                        p.nodeid.command = NETC_NODEID;
+                        p.p.header.len = sizeof(NET_TNodeIdPacket);
+                        p.p.header.time = 0;
+                        p.nodeid.yourid = i;
+#else
                         p.command = NETC_NODEID;
                         p.len = sizeof(NET_TNodeIdPacket);
                         p.time = 0;
                         p.yourid = i;
+#endif
                         COM_SendPacket(i, &p.p);
                     }
                 }
@@ -179,32 +204,61 @@ PUBLIC int NET_ContactPlayers(int *racemode) {
             // Messages from link 0 are broadcast, ignore them and just
             // use them to add new links.
         if (nlink >= 0) {
+#ifdef __AMIGA__
+            if (nlink == 0  && p.sync.command == NETC_SYNC && p.p.header.len == sizeof(NET_TSyncPacket)) {
+#else
             if (nlink == 0  && p.command == NETC_SYNC && p.len == sizeof(NET_TSyncPacket)) {
+#endif
                 COM_TAddress a;
+#ifdef __AMIGA__
+                memcpy(a.addr, p.sync.addr, 6);
+#else
                 memcpy(a.addr, p.addr, 6);
+#endif
                 nlink = COM_AddLink(&a);
                 if (nlink < 0)
                     continue;
                 //printf("New link %d.\n", nlink);
             }
+#ifdef __AMIGA__
+            if (nlink > 0  && p.sync.command == NETC_SYNC && p.p.header.len == sizeof(NET_TSyncPacket)) {
+#else
             if (nlink > 0 && p.command == NETC_SYNC && p.len == sizeof(NET_TSyncPacket)) {
+#endif
 //                printf("Sync packet from link %d.\n", nlink);
+#ifdef __AMIGA__
+                if (p.sync.nodenum != 0xFF) {
+#else
                 if (p.nodenum != 0xFF) {
+#endif
                     if (NET_NodeData[nlink].nodenum == 0xFF)
                         numoknodes++;
+#ifdef __AMIGA__
+                    else if (NET_NodeData[nlink].nodenum != p.sync.nodenum) {
+#else
                     else if (NET_NodeData[nlink].nodenum != p.nodenum) {
+#endif
                         //BASE_Abort("Node changed opinion about its nodenum! %d to %d", NET_NodeData[nlink].nodenum, p.nodenum);
                         NetShow(&GL_RFont, "Only one master allowed");
                         VBL_VSync(70);
                         userabort = TRUE;
                         break;
                     }
+#ifdef __AMIGA__
+                    NET_NodeData[nlink].nodenum = p.sync.nodenum;
+                    NET_NodeNum[p.sync.nodenum] = nlink;
+#else
                     NET_NodeData[nlink].nodenum = p.nodenum;
                     NET_NodeNum[p.nodenum] = nlink;
+#endif
                     //printf("Says he's node number %d.\n", p.nodenum);
                 }
                     // Packet from master?
+#ifdef __AMIGA__
+                if (p.sync.nodenum == 0) {
+#else
                 if (p.nodenum == 0) {
+#endif
                     if (!NET_Slave) {
                         //BASE_Abort("Two master nodes!");
                         NetShow(&GL_RFont, "Only one master allowed");
@@ -214,24 +268,45 @@ PUBLIC int NET_ContactPlayers(int *racemode) {
                     } else {
                         NET_NMaster = nlink;
                         NET_NodeData[nlink].master = TRUE;
+#ifdef __AMIGA__
+                        GL_SelCircuit = p.sync.tracknum;
+                        GL_RaceLaps = (sint8)(p.sync.racelaps & ~0x80);
+                        GL_TimedRace = (p.sync.racelaps & 0x80) != 0;
+                        GL_CarType  = p.sync.cartype;
+                        GL_Seed = p.sync.seed;
+                        *racemode  = p.sync.racemode;
+#else
                         GL_SelCircuit = p.tracknum;
                         GL_RaceLaps = (sint8)(p.racelaps & ~0x80);
                         GL_TimedRace = (p.racelaps & 0x80) != 0;
                         GL_CarType  = p.cartype;
                         GL_Seed = p.seed;
                         *racemode  = p.racemode;
+#endif
                     }
                 }
+#ifdef __AMIGA__
+                NET_NodeData[nlink].kup = p.sync.kup;
+                NET_NodeData[nlink].kdn = p.sync.kdn;
+                NET_NodeData[nlink].klt = p.sync.klt;
+                NET_NodeData[nlink].krt = p.sync.krt;
+                NET_NodeData[nlink].kge = p.sync.kge;
+#else
                 NET_NodeData[nlink].kup = p.kup;
                 NET_NodeData[nlink].kdn = p.kdn;
                 NET_NodeData[nlink].klt = p.klt;
                 NET_NodeData[nlink].krt = p.krt;
                 NET_NodeData[nlink].kge = p.kge;
+#endif
 
                 if (!NET_Slave) { // I am the master, I give node numbers.
                     //printf("I say he's node number %d.\n", nlink);
                 }
+#ifdef __AMIGA__
+            } else if (nlink > 0 && p.nodeid.command == NETC_NODEID && p.p.header.len == sizeof(NET_TNodeIdPacket)) {
+#else
             } else if (nlink > 0 && p.command == NETC_NODEID && p.len == sizeof(NET_TNodeIdPacket)) {
+#endif
                 if (!NET_NodeData[nlink].master) {
                     //BASE_Abort("Non-master node is giving node IDs");
                     NetShow(&GL_RFont, "Only one master allowed");
@@ -239,7 +314,11 @@ PUBLIC int NET_ContactPlayers(int *racemode) {
                     userabort = TRUE;
                     break;
                 }
+#ifdef __AMIGA__
+                if (NET_NodeData[0].nodenum != 0xFF && NET_NodeData[0].nodenum != p.nodeid.yourid) {
+#else
                 if (NET_NodeData[0].nodenum != 0xFF && NET_NodeData[0].nodenum != p.yourid) {
+#endif
                     //BASE_Abort("I've been assigned different node numbers");
                     NetShow(&GL_RFont, "Only one master allowed");
                     VBL_VSync(70);
@@ -249,8 +328,16 @@ PUBLIC int NET_ContactPlayers(int *racemode) {
                 //printf("He says I'm node number %d.\n", p.yourid);
                 if (NET_NodeData[0].nodenum == 0xFF)
                     numoknodes++;
+#ifdef __AMIGA__
+                NET_NodeData[0].nodenum = p.nodeid.yourid;
+#else
                 NET_NodeData[0].nodenum = p.yourid;
+#endif
+#ifdef __AMIGA__
+            } else if (nlink > 0 && p.start.command == NETC_START && p.p.header.len == sizeof(NET_TStartPacket)) {
+#else
             } else if (nlink > 0 && p.command == NETC_START && p.len == sizeof(NET_TStartPacket)) {
+#endif
                 if (!NET_NodeData[nlink].master) {
                     //BASE_Abort("Non-master node ordered to start!");
                     NetShow(&GL_RFont, "Only one master allowed");
@@ -276,9 +363,15 @@ PUBLIC int NET_ContactPlayers(int *racemode) {
         return -1;
     if (!NET_Slave) {   // Tell others that the network identification is ok.
         NET_TPacket p;
+#ifdef __AMIGA__
+        p.start.command = NETC_START;
+        p.p.header.len = sizeof(NET_TStartPacket);
+        p.p.header.time = 1;
+#else
         p.command = NETC_START;
         p.len = sizeof(NET_TStartPacket);
         p.time = 1;
+#endif
         COM_SendPacket(0, &p.p);
     }
 
@@ -310,12 +403,21 @@ PUBLIC int NET_GetCars(void) {
         }
 
         if (j >= 30) {  // Send packets every 30 ticks.
+#ifdef __AMIGA__
+            p.gameinfo.command = NETC_GAMEINFO;
+            p.p.header.len  = sizeof(NET_TGameInfoPacket);
+            p.p.header.time = 0;
+            p.gameinfo.carmodel[0] = GL_SelCar[0];
+            p.gameinfo.carmodel[1] = GL_SelCar[1];
+            p.gameinfo.nnodes = numoknodes;
+#else
             p.command = NETC_GAMEINFO;
             p.len  = sizeof(NET_TGameInfoPacket);
             p.time = 0;
             p.carmodel[0] = GL_SelCar[0];
             p.carmodel[1] = GL_SelCar[1];
             p.nnodes = numoknodes;
+#endif
             COM_SendPacket(0, &p.p);
             if (numok == NET_NumNodes)
                 break;
@@ -328,18 +430,31 @@ PUBLIC int NET_GetCars(void) {
         COM_Housekeep();
         nlink = COM_GetPacket(&p.p);
         if (nlink > 0) {
+#ifdef __AMIGA__
+            if (p.gameinfo.command == NETC_GAMEINFO && p.p.header.len == sizeof(NET_TGameInfoPacket)) {
+#else
             if (p.command == NETC_GAMEINFO && p.len == sizeof(NET_TGameInfoPacket)) {
+#endif
                 if (nodeok[nlink] == 0) {
                     nodeok[nlink]++;
                     numoknodes++;
                 }
+#ifdef __AMIGA__
+                if (p.gameinfo.nnodes == NET_NumNodes) {
+#else
                 if (p.nnodes == NET_NumNodes) {
+#endif
                     if (nodeok[nlink] == 1)
                         numok++;
                     nodeok[nlink]++;
                 }
+#ifdef __AMIGA__
+                GL_SelCar[nlink*2+0] = p.gameinfo.carmodel[0];
+                GL_SelCar[nlink*2+1] = p.gameinfo.carmodel[1];
+#else
                 GL_SelCar[nlink*2+0] = p.carmodel[0];
                 GL_SelCar[nlink*2+1] = p.carmodel[1];
+#endif
 //                j = 70;
             }
         } else if (nlink == -2) {
@@ -370,10 +485,17 @@ PUBLIC int NET_SyncStart(void) {
             break;
 
         if (j >= 70) {  // Send packets every 70 ticks.
+#ifdef __AMIGA__
+            p.start.command = NETC_START;
+            p.p.header.len  = sizeof(NET_TStartPacket);
+            p.p.header.time = 0;
+            p.start.oknodes = numoknodes;
+#else
             p.command = NETC_START;
             p.len  = sizeof(NET_TStartPacket);
             p.time = 0;
             p.oknodes = numoknodes;
+#endif
             COM_SendPacket(0, &p.p);
             if (numok == NET_NumNodes)
                 break;
@@ -387,12 +509,20 @@ PUBLIC int NET_SyncStart(void) {
         COM_Housekeep();
         nlink = COM_GetPacket(&p.p);
         if (nlink > 0) {
+#ifdef __AMIGA__
+            if (p.start.command == NETC_START && p.p.header.len == sizeof(NET_TStartPacket)) {
+#else
             if (p.command == NETC_START && p.len == sizeof(NET_TStartPacket)) {
+#endif
                 if (nodeok[nlink] == 0) {
                     nodeok[nlink]++;
                     numoknodes++;
                 }
+#ifdef __AMIGA__
+                if (p.start.oknodes == NET_NumNodes) {
+#else
                 if (p.oknodes == NET_NumNodes) {
+#endif
                     if (nodeok[nlink] == 1)
                         numok++;
                     nodeok[nlink]++;

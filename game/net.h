@@ -31,7 +31,11 @@ enum {
 };
 
 typedef struct {
+#ifdef __AMIGA__
+    COM_TPacketHeader header;
+#else
     COM_TPacketHeader;
+#endif
 
     byte  command;      // NETC_SYNC
     byte  addr[6];
@@ -50,21 +54,33 @@ typedef struct {
 } NET_TSyncPacket, *NET_PSyncPacket;
 
 typedef struct {
+#ifdef __AMIGA__
+    COM_TPacketHeader header;
+#else
     COM_TPacketHeader;
+#endif
 
     byte  command;      // NETC_NODEID
     byte  yourid;
 } NET_TNodeIdPacket, *NET_PNodeIdPacket;
 
 typedef struct {
+#ifdef __AMIGA__
+    COM_TPacketHeader header;
+#else
     COM_TPacketHeader;
+#endif
 
     byte  command;      // NETC_START || NETC_BYE
     byte  oknodes;
 } NET_TStartPacket, *NET_PStartPacket;
 
 typedef struct {
+#ifdef __AMIGA__
+    COM_TPacketHeader header;
+#else
     COM_TPacketHeader;
+#endif
 
     byte  command;      // NETC_GAMEINFO
     byte  carmodel[2];
@@ -72,13 +88,21 @@ typedef struct {
 } NET_TGameInfoPacket, *NET_PGameInfoPacket;
 
 typedef struct {
+#ifdef __AMIGA__
+    COM_TPacketHeader header;
+#else
     COM_TPacketHeader;
+#endif
 
     byte  command;      // NETC_READY
 } NET_TReadyPacket, *NET_PReadyPacket;
 
 typedef struct {
+#ifdef __AMIGA__
+    COM_TPacketHeader header;
+#else
     COM_TPacketHeader;
+#endif
 
     byte  command;      // NETC_INFO
     byte thisclock;     // clock of this packet info.
@@ -88,7 +112,11 @@ typedef struct {
 } NET_TGamePacket, *NET_PGamePacket;
 
 typedef struct {
+#ifdef __AMIGA__
+    COM_TPacketHeader header;
+#else
     COM_TPacketHeader;
+#endif
 
     byte  command;      // NETC_RESEND
     int   resendfrom;
@@ -96,6 +124,15 @@ typedef struct {
 
 typedef union {
     COM_TPacket p;
+#ifdef __AMIGA__
+    NET_TSyncPacket sync;
+    NET_TNodeIdPacket nodeid;
+    NET_TStartPacket start;
+    NET_TGameInfoPacket gameinfo;
+    NET_TReadyPacket ready;
+    NET_TGamePacket game;
+    NET_TResendPacket resend;
+#else
     NET_TSyncPacket;
     NET_TNodeIdPacket;
     NET_TStartPacket;
@@ -103,6 +140,7 @@ typedef union {
     NET_TReadyPacket;
     NET_TGamePacket;
     NET_TResendPacket;
+#endif
 } NET_TPacket, *NET_PPacket;
 
 // ----------------------------

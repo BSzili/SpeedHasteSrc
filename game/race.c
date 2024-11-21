@@ -669,6 +669,9 @@ PUBLIC void RACE_HandleComms(bool ints) {
     if ((ints && NET_State == NETS_SERIAL)
      || (!ints && NET_State == NETS_IPX)) {
 */
+#ifdef __AMIGA__
+	if (!NET_NumNodes) return; // NET_State == NETS_NONE
+#endif
     if (!ints) {
         int nlink, i, j, mintime;
 
@@ -685,7 +688,12 @@ PUBLIC void RACE_HandleComms(bool ints) {
             // First, from ourselves.
             // Only if there is room for the info. We can not afford to lose
             // info from any node, including ourselves.
+#ifdef __AMIGA__
+		// the player can be NULL in demos
+        if (NET_NodeData[0].p[0] && (NET_NodeData[0].rectime+NET_NCTL) <= (NET_NodeData[0].p[0]->clock)
+#else
         if ((NET_NodeData[0].rectime+NET_NCTL) <= (NET_NodeData[0].p[0]->clock)
+#endif
          && (NET_NodeData[0].rectime+NET_NCTL) <= (mintime+NET_NTIMES)) {
                 // Fetch data from console player.
             if (ConsolePlayer1 != NULL) {
@@ -727,7 +735,11 @@ if (NET_NumNodes == 2) NET_NodeData[0].ctlnum[(NET_NodeData[0].rectime+i)%NET_NT
             int newst;
 
             if (CommTrace) VGA_SetBorder(0,63,0);
+#ifdef __AMIGA__
+            InP.p.header.len = sizeof(NET_TGamePacket);
+#else
             InP.len = sizeof(NET_TGamePacket);
+#endif
             nlink = COM_GetPacket(&InP.p);
             if (nlink == -1)
                 break;
@@ -742,26 +754,51 @@ if (NET_NumNodes == 2) NET_NodeData[0].ctlnum[(NET_NodeData[0].rectime+i)%NET_NT
                 continue;
 
                  // Appropiate size
+#ifdef __AMIGA__
+            if (!(InP.game.command == NETC_INFO && InP.p.header.len == sizeof(NET_TGamePacket))
+             && !(InP.resend.command == NETC_RESEND && InP.p.header.len == sizeof(NET_TResendPacket))) {
+#else
             if (!(InP.command == NETC_INFO && InP.len == sizeof(NET_TGamePacket))
              && !(InP.command == NETC_RESEND && InP.len == sizeof(NET_TResendPacket))) {
+#endif
                 continue;
             }
 
+#ifdef __AMIGA__
+            if (InP.resend.command == NETC_RESEND) {
+#else
             if (InP.command == NETC_RESEND) {
+#endif
 //if (!ints) {printf("resend: %d\r", InP.resendfrom); fflush(stdout);}
+#ifdef __AMIGA__
+                NET_NodeData[nlink].ringtime = InP.resend.resendfrom;
+#else
                 NET_NodeData[nlink].ringtime = InP.resendfrom;
+#endif
                 continue;
             }
                 // INFO command
 
+#ifdef __AMIGA__
+            pc = InP.game.thisclock;
+#else
             pc = InP.thisclock;
+#endif
             lc = NET_NodeData[nlink].rectime & 0xFF;
                 // Update this node's wanted packet number.
             newst = NET_NodeData[nlink].sendtime;
             if ((newst & 0xFF) > (256-NET_NTIMES)
+#ifdef __AMIGA__
+             && InP.game.sendclock < NET_NTIMES)
+#else
              && InP.sendclock < NET_NTIMES)
+#endif
                 newst += 256;
+#ifdef __AMIGA__
+            newst = (newst & ~0xFF) + InP.game.sendclock;
+#else
             newst = (newst & ~0xFF) + InP.sendclock;
+#endif
 
 /*
 if (NET_NumNodes == 2) for (i = NET_NodeData[nlink].sendtime; i < newst; i++) {
@@ -791,10 +828,17 @@ if (NET_NumNodes == 2) for (i = NET_NodeData[nlink].sendtime; i < newst; i++) {
                     NET_TPacket OutP;
 
 //if (!ints) {printf("resend %d, not %d\r", NET_NodeData[nlink].rectime, packettime); fflush(stdout);}
+#ifdef __AMIGA__
+                    OutP.p.header.time = 0;
+                    OutP.p.header.len = sizeof(NET_TResendPacket);
+                    OutP.resend.command = NETC_RESEND;
+                    OutP.resend.resendfrom = NET_NodeData[nlink].rectime;
+#else
                     OutP.time = 0;
                     OutP.len = sizeof(NET_TResendPacket);
                     OutP.command = NETC_RESEND;
                     OutP.resendfrom = NET_NodeData[nlink].rectime;
+#endif
                     if (CommTrace) VGA_SetBorder(63,0,63);
                     COM_SendPacket(nlink, &OutP.p);
                     if (CommTrace) VGA_SetBorder(63,63,0);
@@ -818,7 +862,11 @@ if (NET_NumNodes == 2) if (NET_NodeData[nlink].ctlnum[(NET_NodeData[nlink].recti
     BASE_Abort("Overwriting packet from link %d", nlink);
 */
                 NET_NodeData[nlink].ctl[(NET_NodeData[nlink].rectime+i)%NET_NTIMES][0]
+#ifdef __AMIGA__
+                     = InP.game.ctl[i];
+#else
                      = InP.ctl[i];
+#endif
 /*
 if (NET_NumNodes == 2) NET_NodeData[nlink].ctlnum[(NET_NodeData[nlink].rectime+i)%NET_NTIMES]
     = NET_NodeData[nlink].rectime+i;
@@ -870,11 +918,21 @@ if (NET_NumNodes == 2) if ((p->clock+i) != NET_NodeData[nlink].ctlnum[(NET_NodeD
                         continue;
 
                         // Send my info at this node's time.
+#ifdef __AMIGA__
+                    OutP.p.header.time = 100 + NET_NodeData[j].ringtime;
+                    OutP.p.header.len = sizeof(NET_TGamePacket);
+                    OutP.game.command = NETC_INFO;
+#else
                     OutP.time = 100 + NET_NodeData[j].ringtime;
                     OutP.len = sizeof(NET_TGamePacket);
                     OutP.command = NETC_INFO;
+#endif
                     for (i = 0; i < NET_NCTL; i++) {
+#ifdef __AMIGA__
+                        OutP.game.ctl[i] = NET_NodeData[0].ctl[(NET_NodeData[j].ringtime+i)%NET_NTIMES][0];
+#else
                         OutP.ctl[i] = NET_NodeData[0].ctl[(NET_NodeData[j].ringtime+i)%NET_NTIMES][0];
+#endif
 /*
                         if (memcmp(NetCheckData+(NET_NodeData[j].ringtime+i)%NET_NTIMES,
                                    NET_NodeData[0].ctl[(NET_NodeData[j].ringtime+i)%MAX_USERCONTROLS]+0,
@@ -885,8 +943,13 @@ if (NET_NumNodes == 2) if ((p->clock+i) != NET_NodeData[nlink].ctlnum[(NET_NodeD
                             );
 */
                     }
+#ifdef __AMIGA__
+                    OutP.game.thisclock = NET_NodeData[j].ringtime & 0xFF;
+                    OutP.game.sendclock = NET_NodeData[j].rectime & 0xFF;
+#else
                     OutP.thisclock = NET_NodeData[j].ringtime & 0xFF;
                     OutP.sendclock = NET_NodeData[j].rectime & 0xFF;
+#endif
 //                    OutP.thisFullClock = NET_NodeData[j].ringtime;
                     if (CommTrace) VGA_SetBorder(0,63,63);
                     COM_SendPacket(j, &OutP.p);
@@ -989,6 +1052,16 @@ PRIVATE void DmpTrans(byte *dest, const byte *org, int nb) {
     }
 }
 */
+#ifdef __AMIGA__
+void DmpTrans(byte *dest, const byte *org, int nb) {
+    LOOP(j, nb) {
+        if (*org != 0)
+            *dest = *org;
+        dest++;
+        org++;
+    }
+}
+#else
 extern void DmpTrans(byte *dest, const byte *org, int nb);
 #pragma aux DmpTrans modify [EAX] parm [EDI] [ESI] [ECX] = \
     "drl:             "  \
@@ -1012,7 +1085,21 @@ extern void DmpTrans(byte *dest, const byte *org, int nb);
     "    DEC ECX      "  \
     "    JNZ trl      "  \
     "bye:             "
+#endif
 
+#ifdef __AMIGA__
+void DmpTrans640(unsigned char *dest, const unsigned char *org, int nb) {
+    LOOP(j, nb) {
+        unsigned char al = *org++;
+		if (al != 0) {
+            *dest++ = al;
+            *dest++ = al;
+		} else {
+			dest += 2;
+		}
+    }
+}
+#else
 extern void DmpTrans640(byte *dest, const byte *org, int nb);
 #pragma aux DmpTrans640 modify [EAX] parm [EDI] [ESI] [ECX] = \
     "drl:             "  \
@@ -1037,6 +1124,7 @@ extern void DmpTrans640(byte *dest, const byte *org, int nb);
     "    DEC ECX      "  \
     "    JNZ trl      "  \
     "bye:             "
+#endif
 
 extern void Dmp640(byte *dest, const byte *org, int nb);
 #pragma aux Dmp640 modify [EAX] parm [EDI] [ESI] [ECX] = \
@@ -1372,9 +1460,16 @@ PRIVATE void RemoveTargetPos(GL_PViewInfo v, FS3_PSprite cspr[2], THN_PThing cth
                  && i < Map.nracers; i++) {
         if (Map.racers[i]->thn == v->thn) {
             if (i < SIZEARRAY(RacePos)) {
+#ifdef __AMIGA__
+				// this can be NULL in Practice
+				if (RacePos[i]) {
+#endif
                 cspr[0] = RacePos[i]->spr;
                 RacePos[i]->spr = NULL;
                 cthn[0] = RacePos[i];
+#ifdef __AMIGA__
+				}
+#endif
             }
         }
         if (i < NHumanPlayers) {
@@ -1529,7 +1624,11 @@ PUBLIC int RACE_DoRace(int mode, RACE_TResult result[NET_MAXNODES]) {
 
     if (NET_State != NETS_NONE && NET_SyncStart() < 0)
         goto endrace;
+#ifdef __AMIGA__
+    GAME_EFF_Start(SH_Vtal, 0, MOTORMIN,  ((GL_CarType==1)+1)*96, 0, SH_Eff);
+#else
     GAME_EFF_Start(SH_Vtal, 0, MOTORMIN,  ((GL_CarType==1)*2+1)*64, 0, SH_Eff);
+#endif
     if (ConsolePlayer2 == NULL && NCars > 0) {
         GAME_EFF_Start(SH_Vtal, 1, MOTORMIN,   0, 0, SH_Eff);
         GAME_EFF_Start(SH_Vtal, 2, MOTORMIN,   0, 0, SH_Eff);
@@ -1897,6 +1996,17 @@ PUBLIC int RACE_DoRace(int mode, RACE_TResult result[NET_MAXNODES]) {
             DRW_TranslatePtr = GL_ClrTable + 256*16;
             IS2_Draw(gameover, LLS_SizeX/2, LLS_SizeY/2, gameover->w*30/(countgover + 30), gameover->h*30/(countgover + 30));
         }
+// sector debug start
+/*
+		extern void SEC_DebugDraw(SEC_PSector s, byte c);
+	for (int i = 0; i < Map.sec.ns; i++) {
+		SEC_PSector sec = &Map.sec.secs[i];
+		//byte c = (sec == ConsolePlayer1->thn->sec) ? rand() : (dword)sec;
+		byte c = (sec == Views[0].c.sec) ? rand() : (dword)sec;
+		SEC_DebugDraw(sec, c);
+	}
+*/
+// sector debug end
 
             // Snoop wires.
         RACE_HandleComms(FALSE);

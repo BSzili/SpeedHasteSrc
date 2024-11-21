@@ -70,7 +70,11 @@ void O3D_RotateObject(O3D_PSmallObject obj) {
 
     R3D_Gen3DMatrix(&obj->sobM, obj->sobAngles);
 
+#ifdef __AMIGA__
+    R3D_Rot3DVector(obj->sobRotPts, &obj->sobM,  obj->sobPoints, obj->sobNPoints, sizeof(obj->sobRotPts[0]));
+#else
     R3D_Rot3DVector(obj->sobRotPts, &obj->sobM,  obj->sobPoints, obj->sobNPoints);
+#endif
     R3D_Add3DVector(obj->sobRotPts, obj->sobPos, obj->sobRotPts, obj->sobNPoints);
 /*
     for (i = 0; i < obj->sobNPoints; i++) {
@@ -84,7 +88,11 @@ void O3D_ProjectObject(O3D_PSmallObject obj)
 {
     int i;
 
+#ifdef __AMIGA__
+    R3D_Project3D(obj->sobProjPts, obj->sobRotPts, obj->sobNPoints, sizeof(obj->sobProjPts[0]), sizeof(obj->sobRotPts[0]));
+#else
     R3D_Project3D(obj->sobProjPts, obj->sobRotPts, obj->sobNPoints);
+#endif
 /*
     for (i = 0; i < obj->sobNPoints; i++) {
         R3D_Project3D(obj->sobProjPts[i], obj->sobRotPts[i]);

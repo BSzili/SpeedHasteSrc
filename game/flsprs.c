@@ -455,7 +455,9 @@ PRIVATE void O3DMCalcLights(O3DM_PObject obj, dword ang) {
 
 PRIVATE void O3DMDraw(F3D_PCamera c, O3DM_PObject obj, int scrx, int scry) {
     int i, j, nv;
+#ifndef __AMIGA__
     int ladd = *obj->rot;
+#endif
     O3DM_PFace pl;
 
     for (pl = O3DM_OrderFaces(obj); pl != NULL; pl = pl->h.next) {

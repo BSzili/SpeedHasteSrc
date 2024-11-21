@@ -394,19 +394,86 @@ PUBLIC O3DM_PObject O3DM_LoadObject(const char *fname) {
 
             size = 0;
             fread(&size, sizeof(size), 1, f);
+#ifdef __AMIGA__
+			size = BSwapDword(size);
+#endif
             if ( (obj = NEW(size)) != NULL) {
                 fread(obj, size, 1, f);
+#ifdef __AMIGA__
+				obj->nVerts = BSwapWord(obj->nVerts);
+				obj->nNormals = BSwapWord(obj->nNormals);
+				obj->nFaces = BSwapWord(obj->nFaces);
+				obj->nFaceVerts = BSwapWord(obj->nFaceVerts);
+				obj->nMaterials = BSwapWord(obj->nMaterials);
+				obj->flags = BSwapWord(obj->flags);
+                obj->verts     = BSwapDword(obj->verts);
+                obj->normals   = BSwapDword(obj->normals);
+                obj->faces     = BSwapDword(obj->faces);
+                obj->materials = BSwapDword(obj->materials);
+                obj->pos = BSwapDword(obj->pos);
+                obj->rot = BSwapDword(obj->rot);
+                obj->scx = BSwapDword(obj->scx);
+                obj->scy = BSwapDword(obj->scy);
+                obj->scz = BSwapDword(obj->scz);
+                obj->dcx = BSwapDword(obj->dcx);
+                obj->dcy = BSwapDword(obj->dcy);
+                obj->dcz = BSwapDword(obj->dcz);
+#endif
                 base = (dword)obj;
                 obj->verts     = OF(obj->verts);
                 obj->normals   = OF(obj->normals);
                 obj->faces     = OF(obj->faces);
                 obj->materials = OF(obj->materials);
+#ifdef __AMIGA__
+				for (i = 0; i < obj->nVerts; i++) {
+					obj->verts[i].x = BSwapDword(obj->verts[i].x);
+					obj->verts[i].y = BSwapDword(obj->verts[i].y);
+					obj->verts[i].z = BSwapDword(obj->verts[i].z);
+					obj->verts[i].rx = BSwapDword(obj->verts[i].rx);
+					obj->verts[i].ry = BSwapDword(obj->verts[i].ry);
+					obj->verts[i].rz = BSwapDword(obj->verts[i].rz);
+					obj->verts[i].px = BSwapDword(obj->verts[i].px);
+					obj->verts[i].py = BSwapDword(obj->verts[i].py);
+					obj->verts[i].l = BSwapDword(obj->verts[i].l);
+				}
+
+				for (i = 0; i < obj->nNormals; i++) {
+					obj->normals[i].x = BSwapDword(obj->normals[i].x);
+					obj->normals[i].y = BSwapDword(obj->normals[i].y);
+					obj->normals[i].z = BSwapDword(obj->normals[i].z);
+					obj->normals[i].rx = BSwapDword(obj->normals[i].rx);
+					obj->normals[i].ry = BSwapDword(obj->normals[i].ry);
+					obj->normals[i].rz = BSwapDword(obj->normals[i].rz);
+					obj->normals[i].l = BSwapDword(obj->normals[i].l);
+				}
+#endif
                 pf2 = NULL;
                 for (face = obj->faces; face != NULL; face = pf2) {
+#ifdef __AMIGA__
+					face->h.nVerts = BSwapWord(face->h.nVerts);
+					face->h.flags = BSwapDword(face->h.flags);
+					face->h.material = BSwapDword(face->h.material);
+					face->h.tox = BSwapDword(face->h.tox);
+					face->h.toy = BSwapDword(face->h.toy);
+					face->h.tsx = BSwapDword(face->h.tsx);
+					face->h.tsy = BSwapDword(face->h.tsy);
+					face->h.ta = BSwapDword(face->h.ta);
+					face->h.back = BSwapDword(face->h.back);
+					face->h.front = BSwapDword(face->h.front);
+					face->h.depth = BSwapDword(face->h.depth);
+					face->h.next = BSwapDword(face->h.next);
+#endif
                     if (face->h.front != NULL)
                         face->h.front = OF(face->h.front);
                     pf2 = face->h.front;
                     for (i = 0; i < face->h.nVerts; i++) {
+#ifdef __AMIGA__
+						face->verts[i].vert = BSwapDword(face->verts[i].vert);
+						face->verts[i].normal = BSwapDword(face->verts[i].normal);
+						face->verts[i].tx = BSwapDword(face->verts[i].tx);
+						face->verts[i].ty = BSwapDword(face->verts[i].ty);
+						face->verts[i].l = BSwapDword(face->verts[i].l);
+#endif
                         face->verts[i].vert = OF(face->verts[i].vert);
                         if (face->verts[i].normal != NULL)
                             face->verts[i].normal = OF(face->verts[i].normal);
@@ -414,6 +481,15 @@ PUBLIC O3DM_PObject O3DM_LoadObject(const char *fname) {
                     if (face->h.material != NULL)
                         face->h.material = OF(face->h.material);
                 }
+#ifdef __AMIGA__
+				for (i = 0; i < obj->nMaterials; i++) {
+					obj->materials[i].flags = BSwapWord(obj->materials[i].flags);
+					obj->materials[i].ambient = BSwapDword(obj->materials[i].ambient);
+					obj->materials[i].diffuse = BSwapDword(obj->materials[i].diffuse);
+					obj->materials[i].reflected = BSwapDword(obj->materials[i].reflected);
+					//obj->materials[i].texture = BSwapDword(obj->materials[i].texture);
+				}
+#endif
                 for (i = 0; i < obj->nMaterials; i++)
                     if (obj->materials[i].texture != NULL) {
                         long l;

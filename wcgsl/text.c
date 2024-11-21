@@ -27,6 +27,10 @@ bool FONT_Load(FONT_TFont *font, const char *fname) {
     if (f == NULL)
         return FALSE;
     fread(&fHdr, sizeof(fHdr), 1, f);
+#ifdef __AMIGA__
+	fHdr.flags = BSwapWord(fHdr.flags);
+	fHdr.len = BSwapDword(fHdr.len);
+#endif
     font->flags  = fHdr.flags;
     font->width  = fHdr.width;
     font->height = fHdr.height;

@@ -115,6 +115,12 @@ PUBLIC void F3D_Draw3D(byte *dest, const byte *map[], int w, int h,
             t = 0;
         else
             t = PAL_LEVELS-2-(((PAL_LEVELS-2)*(rad-(4 << 16))/(36-4)) >> 16);
+#ifdef __AMIGA__
+//		kprintf("%s Y %ld t %lu\n", __FUNCTION__, Y, t);
+		if (t == 15)
+			FL_SetMap(map, NULL);
+		else
+#endif
         FL_SetMap(map, trans[31-t]);
         vecX = FPMult(FPMultDiv(cam->data.h,0x1000,Y), Cos(cam->angle-16384));
         vecY = FPMult(FPMultDiv(cam->data.h,0x1000,Y), Sin(cam->angle-16384));

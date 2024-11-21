@@ -89,7 +89,14 @@ PRIVATE void doFrame(const ANIM_TAnimation *anim) {
 
         i = *p++;
         if (i == 255)
+#ifdef __AMIGA__
+            {
+                i += *((word *)p);
+                p += 2;
+            }
+#else
             i += *((word *)p)++;
+#endif
         c = *p++;
         if (c != 0) {
             dword c32 = (c << 24) | (c << 16) | (c << 8) | (c << 0);
@@ -98,7 +105,11 @@ PRIVATE void doFrame(const ANIM_TAnimation *anim) {
 
             while (j > 0) {
                 *(dword *)q = *(dword *)q ^ c32;
+#ifdef __AMIGA__
+                q += 4;
+#else
                 ((dword *)q)++;
+#endif
                 j--;
             }
             while (i > 0) {
@@ -116,13 +127,26 @@ PRIVATE void doFrame(const ANIM_TAnimation *anim) {
 
         i = *p++;
         if (i == 255)
+#ifdef __AMIGA__
+            {
+                i += *((word *)p);
+                p += 2;
+            }
+#else
             i += *((word *)p)++;
+#endif
         {
             int j = (i >> 2);
             i &= 3;
             while (j > 0) {
+#ifdef __AMIGA__
+                *(dword*)q = *(dword*)q ^ *((dword*)p);
+                p += 4;
+                q += 4;
+#else
                 *(dword*)q = *(dword*)q ^ *((dword*)p)++;
                 ((dword*)q)++;
+#endif
                 j--;
             }
         }

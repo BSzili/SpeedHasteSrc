@@ -11,8 +11,10 @@
 #include <string.h>
 #include <stdarg.h>
 
+#ifndef __AMIGA__
 struct SREGS sregs;
 union REGS inregs, outregs;
+#endif
 
 int ArgC    = 1;
 PRIVATE char *dumbname[] = {

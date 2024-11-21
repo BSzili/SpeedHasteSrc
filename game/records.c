@@ -218,7 +218,11 @@ PUBLIC int REC_ShowBest(REC_PBestRecord list, int n, int ncar) {
         VBL_FadePos = 1;    // Go!
     }
     LLK_LastScan = 0;
+#ifdef __AMIGA__
+    while (VBL_FadePos > 0 && LLK_LastScan == 0) VBL_VSync(1);
+#else
     while (VBL_FadePos > 0 && LLK_LastScan == 0);
+#endif
     VBL_FadePos = 0;
     LLK_LastScan = 0;
 
@@ -295,7 +299,11 @@ PUBLIC int REC_ShowCirc(REC_PCircRecord list, int n, int ncar) {
         VBL_FadePos = 1;    // Go!
     }
     LLK_LastScan = 0;
+#ifdef __AMIGA__
+    while (VBL_FadePos > 0 && LLK_LastScan == 0) VBL_VSync(1);
+#else
     while (VBL_FadePos > 0 && LLK_LastScan == 0);
+#endif
     VBL_FadePos = 0;
     LLK_LastScan = 0;
 
@@ -380,7 +388,11 @@ PUBLIC int REC_InputBest(REC_PBestRecord list, int n, int nplayer, int ncirc, in
         VBL_FadePos = 1;    // Go!
     }
     LLK_LastScan = 0;
+#ifdef __AMIGA__
+    while (VBL_FadePos > 0 && LLK_LastScan == 0) VBL_VSync(1);
+#else
     while (VBL_FadePos > 0 && LLK_LastScan == 0);
+#endif
     VBL_FadePos = 0;
     LLK_LastScan = 0;
 
@@ -513,7 +525,11 @@ PUBLIC int REC_InputCirc(REC_PCircRecord list, int n, int nplayer, int ncirc, dw
         VBL_FadePos = 1;    // Go!
     }
     LLK_LastScan = 0;
+#ifdef __AMIGA__
+    while (VBL_FadePos > 0 && LLK_LastScan == 0) VBL_VSync(1);
+#else
     while (VBL_FadePos > 0 && LLK_LastScan == 0);
+#endif
     VBL_FadePos = 0;
     LLK_LastScan = 0;
 

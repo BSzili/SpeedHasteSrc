@@ -33,6 +33,12 @@ PUBLIC bool MAP_LoadThings(MAP_PMap map, const char *fname) {
     l = JCLIB_FileSize(fname) - sizeof(tDiskMap);
     fseek(f, ftell(f) + sizeof(tDiskMap), SEEK_SET);
     while (l >= sizeof(mapt) && fread(&mapt, sizeof(mapt), 1, f) == 1) {
+#ifdef __AMIGA__
+		mapt.x = BSwapWord(mapt.x);
+		mapt.y = BSwapWord(mapt.y);
+		mapt.angle = BSwapWord(mapt.angle);
+		mapt.type = BSwapWord(mapt.type);
+#endif
 //        printf("Loading thing type 0x%X\n", mapt.type);
             // Correct mapper quirks with the data.
         mapt.angle = 0x4000 - mapt.angle;
@@ -104,6 +110,14 @@ PUBLIC bool MAP_Load(MAP_PMap map, const char *fname) {
     REQUIRE(JCLIB_Load(fname, pm, sizeof(*pm)) == sizeof(*pm));
     if (!((map->thnMap = NEW(64*64*sizeof(*map->thnMap))) != NULL))
         BASE_Abort("Out of memory for thing map");
+#ifdef __AMIGA__
+	pm->Version = BSwapWord(pm->Version);
+    for (i = 0; i < 64; i++) {
+        for (j = 0; j < 64; j++) {
+			pm->Map[i][j] = BSwapWord(pm->Map[i][j]);
+		}
+	}
+#endif
     THN_InitMap(map->thnMap);
     map->staticCameras = NULL;
     map->startPos = NULL;
@@ -304,11 +318,23 @@ void PATH_Init(PATH_PPath path, const char *fname)
 
     f = JCLIB_Open(fname);
     REQUIRE(fread(&hdr, 1, sizeof(hdr), f) == sizeof(hdr));
+#ifdef __AMIGA__
+	//hdr.magic.num = BSwapDword(hdr.magic.num);
+	hdr.version = BSwapDword(hdr.version);
+	hdr.numpoints = BSwapDword(hdr.numpoints);
+	hdr.pointsize = BSwapDword(hdr.pointsize);
+#endif
     REQUIRE(hdr.magic.num == magic.num);
     if (!((path->points = NEW(sizeof(*path->points)*hdr.numpoints)) != NULL))
         BASE_Abort("Out of memory for path points");
     for (i = 0; i < hdr.numpoints; i++) {
         REQUIRE(fread(path->points + i, 4*sizeof(uint32), 1, f) == 1);
+#ifdef __AMIGA__
+		path->points[i].x = BSwapDword(path->points[i].x);
+		path->points[i].y = BSwapDword(path->points[i].y);
+		path->points[i].dir = BSwapDword(path->points[i].dir);
+		path->points[i].speed = BSwapDword(path->points[i].speed);
+#endif
         path->points[i].ncars = 0;
     }
     path->numpoints = hdr.numpoints;

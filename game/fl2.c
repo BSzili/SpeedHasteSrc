@@ -42,7 +42,14 @@
 
 // ==========================================
 
+#ifdef __AMIGA__
+#include <signal.h>
+extern void __stkinit(void);
+void * __x = __stkinit;
+unsigned int __stack = 1024 * 256;
+#else
 #define QUIERO_LOG
+#endif
 
 #ifdef QUIERO_LOG
 
@@ -383,7 +390,11 @@ PRIVATE bool ShowRaceResults(int racemode, int np, RACE_TResult *result, int *sc
         VBL_FadePos = 1;    // Go!
     }
     LLK_LastScan = 0;
-    while (VBL_FadePos > 0 && LLK_LastScan == 0);
+#ifdef __AMIGA__
+    while (VBL_FadePos != 0 && LLK_LastScan == 0) VBL_VSync(1);
+#else
+    while (VBL_FadePos != 0 && LLK_LastScan == 0);
+#endif
     VBL_FadePos = 0;
     VBL_ZeroPalette();
     LLK_LastScan = 0;
@@ -447,7 +458,11 @@ PRIVATE bool ShowRaceResults(int racemode, int np, RACE_TResult *result, int *sc
 
             nlink = COM_GetPacket(&p.p);
             if (nlink > 0)
+#ifdef __AMIGA__
+                if (p.start.command == NETC_BYE && p.p.header.len == sizeof(NET_TStartPacket))
+#else
                 if (p.command == NETC_BYE && p.len == sizeof(NET_TStartPacket))
+#endif
                     abandon = TRUE;
         }
 
@@ -491,10 +506,17 @@ PRIVATE bool ShowRaceResults(int racemode, int np, RACE_TResult *result, int *sc
                         break;
 
                     if (j >= 30) {  // Send packets every 30 ticks.
+#ifdef __AMIGA__
+                        p.start.command = NETC_BYE;
+                        p.p.header.len  = sizeof(NET_TStartPacket);
+                        p.p.header.time = 0;
+                        p.start.oknodes = numoknodes;
+#else
                         p.command = NETC_BYE;
                         p.len  = sizeof(NET_TStartPacket);
                         p.time = 0;
                         p.oknodes = numoknodes;
+#endif
                         COM_SendPacket(0, &p.p);
                         if (numok == NET_NumNodes)
                             break;
@@ -505,12 +527,20 @@ PRIVATE bool ShowRaceResults(int racemode, int np, RACE_TResult *result, int *sc
                     COM_Housekeep();
                     nlink = COM_GetPacket(&p.p);
                     if (nlink > 0) {
+#ifdef __AMIGA__
+                        if (p.start.command == NETC_BYE && p.p.header.len == sizeof(NET_TStartPacket)) {
+#else
                         if (p.command == NETC_BYE && p.len == sizeof(NET_TStartPacket)) {
+#endif
                             if (nodeok[nlink] == 0) {
                                 nodeok[nlink]++;
                                 numoknodes++;
                             }
+#ifdef __AMIGA__
+                            if (p.start.oknodes == NET_NumNodes) {
+#else
                             if (p.oknodes == NET_NumNodes) {
+#endif
                                 if (nodeok[nlink] == 1) {
                                     numok++;
                                     nodeok[nlink]++;
@@ -629,6 +659,10 @@ extern void FinishProgram(void) {
             p++;
         } while (TRUE);
     }
+#ifdef __AMIGA__
+	JCLIB_Done();
+	//VGA_SetMode(3); // TODO this should be called by LLS_End
+#endif
 }
 
 void main(int argc, char *argv[]) {
@@ -637,6 +671,11 @@ void main(int argc, char *argv[]) {
     sint efftime, lefftime;
     bool firstmenu = TRUE;
 
+#ifdef __AMIGA__
+//setbuf(stdout, NULL); // TODO remove
+    signal(SIGABRT, (_sig_func_ptr)FinishProgram);
+    signal(SIGINT, (_sig_func_ptr)FinishProgram);
+#endif
     ArgC = argc; ArgV = argv;
 
     VGA_SetMode(3);
@@ -790,9 +829,11 @@ void main(int argc, char *argv[]) {
         LLK_PressAnyKey();
     }
 */
+#ifndef __AMIGA__
     if (BASE_CheckArg("nologo") <= 0) {
         INTRO_DoIntro();
     }
+#endif
 
     LLS_Init(LLSM_VIRTUAL, LLSVM_MODE13);
     DRW_SetClipZone(0, 0, LLS_SizeX, LLS_SizeY, NULL);
@@ -926,7 +967,9 @@ void main(int argc, char *argv[]) {
             rez = 0;        // Reinit music, etc.
         } else if (rez == -4) {     // Greetings.
             MENU_End();
+#ifndef __AMIGA__
             INTRO_DoGreets();
+#endif
             rez = 0;
         }
         if (rez < 0)
@@ -955,7 +998,11 @@ void main(int argc, char *argv[]) {
             VBL_FadeMode = VBL_FADEFAST;
             VBL_FadePos = 1;    // Go!
         }
+#ifdef __AMIGA__
+        while (VBL_FadePos != 0 && LLK_LastScan == 0) VBL_VSync(1);
+#else
         while (VBL_FadePos != 0 && LLK_LastScan == 0);
+#endif
         VBL_DumpPalette(GamePal, 0, 256);
         VBL_VSync(0);
         VBL_VSync(2);
@@ -974,7 +1021,11 @@ void main(int argc, char *argv[]) {
             VBL_FadeMode = VBL_FADEFAST;
             VBL_FadePos = 1;    // Go!
         }
+#ifdef __AMIGA__
+        while (VBL_FadePos != 0 && LLK_LastScan == 0) VBL_VSync(1);
+#else
         while (VBL_FadePos != 0 && LLK_LastScan == 0);
+#endif
     } else
         MENU_DoneMusic();
 
@@ -1009,5 +1060,8 @@ void main(int argc, char *argv[]) {
             DrawBar();
         }
     }
+#ifdef __AMIGA__
+	JCLIB_Done();
+#endif
 }
 

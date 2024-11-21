@@ -44,6 +44,23 @@ PRIVATE int LogoPos[NLOGOSPRS][2] = {
     {185, 60},
     {217, 60},
 };
+#ifdef __AMIGA__
+#undef NLOGOSPRS
+PRIVATE int NLOGOSPRS = 12;
+PRIVATE int LogoPosSH[10][2] = {
+	{ 59, 31}, // S
+	{ 99, 31}, // P
+	{131, 31}, // E
+	{164, 31}, // E
+	{196, 31}, // D
+
+	{ 88, 60}, // H
+	{117, 65}, // A
+	{157, 60}, // S
+	{194, 60}, // T
+	{227, 60}, // E
+};
+#endif
 PRIVATE IS2_PSprite SprHelmet, SprCredits, SprTM;
 
 byte *MENU_Back = NULL;
@@ -89,10 +106,24 @@ PUBLIC bool MENU_Init(const char *fback, const byte *copy) {
         char buf[30];
         sprintf(buf, "sphl%i.IS2", i);
         if ( (LogoSprs[i] = IS2_Load(buf)) == NULL) {
+#ifdef __AMIGA__
+			NLOGOSPRS = i;
+			break;
+#else
             MENU_End();
             return FALSE;
+#endif
         }
     }
+#ifdef __AMIGA__
+    // replace the letter positions for Speed Haste
+    if (NLOGOSPRS == SIZEARRAY(LogoPosSH)) {
+		for (i = 0; i < SIZEARRAY(LogoPosSH); i++) {
+			LogoPos[i][0] = LogoPosSH[i][0];
+			LogoPos[i][1] = LogoPosSH[i][1];
+		}
+	}
+#endif
     return TRUE;
 }
 
@@ -125,7 +156,11 @@ PRIVATE void SetBackgroundScreen(void) {
     IS2_Draw(SprHelmet, 200, 20, SprHelmet->w, SprHelmet->h);
     IS2_Draw(SprCredits, 160, 200-2-SprCredits->h, SprCredits->w, SprCredits->h);
         // Draw logo
+#ifdef __AMIGA__
+    for (i = 0; i < NLOGOSPRS; i++) {
+#else
     for (i = 0; i < SIZEARRAY(LogoSprs); i++) {
+#endif
         IS2_PSprite p;
         p = LogoSprs[i];
         IS2_Draw(p, LogoPos[i][0], LogoPos[i][1], p->w, p->h);
@@ -1223,7 +1258,11 @@ PRIVATE int ChooseCircMenu(void) {
         VBL_FadePos = 1;    // Go!
     }
     LLK_LastScan = 0;
+#ifdef __AMIGA__
+    while (VBL_FadePos > 0 && LLK_LastScan == 0) VBL_VSync(1);
+#else
     while (VBL_FadePos > 0 && LLK_LastScan == 0);
+#endif
     VBL_FadePos = 0;
     VBL_ZeroPalette();
     LLK_LastScan = 0;
@@ -1468,7 +1507,11 @@ PRIVATE int ChooseCarMenu(void) {
     REQUIRE( (maxspeed = IS2_Load("msfmax.is2")) != NULL);
 
     memcpy(MENU_Back, LLS_Screen[0], LLS_Size);
+#ifdef __AMIGA__
+    while (VBL_FadePos > 0 && LLK_LastScan == 0) VBL_VSync(1);
+#else
     while (VBL_FadePos > 0 && LLK_LastScan == 0);
+#endif
     VBL_FadePos = 0;
     LLK_LastScan = 0;
     LLS_Update();
@@ -1731,7 +1774,11 @@ PRIVATE int MainMenu(void) {
             bv = 0;
             clk = 0;
             LLK_LastScan = 0;
+#ifdef __AMIGA__
+            while (lm < NLOGOSPRS) {
+#else
             while (lm < SIZEARRAY(LogoPos)) {
+#endif
                 int h, nf;
 
                 if (cv < 0x4000)
@@ -1961,7 +2008,11 @@ PRIVATE int JukeBoxMenu(void) {
         VBL_FadePos = 1;    // Go!
     }
     LLK_LastScan = 0;
+#ifdef __AMIGA__
+    while (VBL_FadePos > 0 && LLK_LastScan == 0) VBL_VSync(1);
+#else
     while (VBL_FadePos > 0 && LLK_LastScan == 0);
+#endif
     VBL_FadePos = 0;
     LLK_LastScan = 0;
 

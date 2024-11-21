@@ -1,0 +1,145 @@
+CC := m68k-amigaos-gcc
+#CXX := m68k-amigaos-g++
+AS := vasmm68k_mot -I/opt/amiga/m68k-amigaos/ndk-include -I/opt/amiga/m68k-amigaos/include -Fhunk -m68020 -quiet
+# -Fhunk -m68020 -quiet
+STRIP := m68k-amigaos-strip
+RM := rm -f
+
+CPU ?= 060
+ifeq ($(CPU),060)
+ARCH = -m68060 -mhard-float -ffast-math
+else
+ARCH = -m68040 -msoft-float
+endif
+
+PROGRAM = SpeedHaste.$(CPU)
+
+DEBUG ?= 0
+DEFINES := 
+#-DNO_OPENGL
+INCLUDES :=  -Iamiga -Ips3m-ahi -Igame -Iwcgsl/h
+CFLAGS := $(ARCH) $(DEFINES) $(INCLUDES) -noixemul -fno-common
+ifneq ($(DEBUG), 1)
+CFLAGS += -O2 -DNDEBUG -fomit-frame-pointer
+CFLAGS += -fbbb=-
+else
+CFLAGS += -g -D_DEBUG
+endif
+#CFLAGS += -save-temps
+#CFLAGS += -fstack-usage
+#CFLAGS += -Wstack-usage=1024
+CFLAGS += -Wall
+CFLAGS += -Wno-unknown-pragmas -Wno-pointer-sign -Wno-discarded-qualifiers
+# -Wno-unused-variable -Wno-switch -Wno-sign-compare -Wno-parentheses
+# -Wno-pointer-sign -Wno-pointer-to-int-cast
+#CXXFLAGS = $(CFLAGS) -fno-exceptions -fno-rtti 
+#CXXFLAGS += -Wno-write-strings
+
+#ASFLGAS = 
+
+LDFLAGS := -noixemul $(ARCH)
+#LDFLAGS += -Lamiga/lib -lz
+LDFLAGS +=  -ldebug
+LDFLAGS += -lm
+#LDFLAGS += -fno-exceptions -fno-rtti
+
+AMIGA_SRC = \
+	amiga/amigfx.c \
+	amiga/dos.c \
+	amiga/fl.c \
+	amiga/fire.c \
+	amiga/sincos.c \
+	amiga/sqrt.c \
+	amiga/timer.c \
+	amiga/llkeyc.c \
+	amiga/textscr.c \
+	amiga/polygon.c \
+	amiga/rot3d.c \
+	amiga/serial.c \
+	amiga/llipx.c \
+	amiga/joystick.c \
+	amiga/llmouse.c \
+	amiga/dpmi.c \
+	amiga/gamevtal.c \
+	amiga/vblc.c \
+	amiga/hordraw.c \
+	amiga/vertdraw.c \
+	amiga/c2p1x1_8_c5_bm_040.s \
+	ps3m-ahi/ps3m.s
+#	amiga/vgac.c \
+#	amiga/llvesa.c \
+#	amiga/llscr.c \
+
+GAME_SRC = \
+	game/3dfloor.c \
+	game/blueprin.c \
+	game/cars.c \
+	game/config.c \
+	game/credits.c \
+	game/fl2.c \
+	game/flsprs.c \
+	game/globals.c \
+	game/hud.c \
+	game/menus.c \
+	game/models.c \
+	game/net.c \
+	game/race.c \
+	game/racemap.c \
+	game/racers.c \
+	game/records.c \
+	game/sectors.c \
+	game/things.c \
+	game/userctl.c
+
+# todo
+#	game/intro.c \
+#	wcgsl/hard.c \
+#	wcgsl/m12utilc.c \
+
+
+WCGSL_SRC = \
+	wcgsl/3dobj.c \
+	wcgsl/animatec.c \
+	wcgsl/atan.c \
+	wcgsl/atantbl.c \
+	wcgsl/base.c \
+	wcgsl/bitmap.c \
+	wcgsl/comms.c \
+	wcgsl/controls.c \
+	wcgsl/cspline.c \
+	wcgsl/cursor.c \
+	wcgsl/desktop.c \
+	wcgsl/graphics.c \
+	wcgsl/is2code.c \
+	wcgsl/jclib.c \
+	wcgsl/keynames.c \
+	wcgsl/lbm.c \
+	wcgsl/llscrc.c \
+	wcgsl/namelist.c \
+	wcgsl/object3d.c \
+	wcgsl/pix.c \
+	wcgsl/polygonc.c \
+	wcgsl/rot3dc.c \
+	wcgsl/sincos_i.c \
+	wcgsl/strlist.c \
+	wcgsl/strparse.c \
+	wcgsl/text.c \
+	wcgsl/vertdrwc.c \
+	wcgsl/vtal.c \
+
+SRCS := $(GAME_SRC) $(WCGSL_SRC) $(AMIGA_SRC)
+OBJS := $(filter %.o, $(SRCS:.c=.o) $(SRCS:.s=.o))
+
+
+all: $(PROGRAM)
+
+$(PROGRAM): $(OBJS)
+	$(CC) -o $@ $^ $(LDFLAGS) -Wl,-Map=$@.map
+ifneq ($(DEBUG), 1)
+	$(STRIP) $@
+endif
+
+.PHONY: clean
+
+clean:
+	$(RM) $(OBJS) $(PROGRAM) $(PROGRAM).map

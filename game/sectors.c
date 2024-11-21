@@ -143,6 +143,28 @@ PUBLIC bool SEC_LoadMap(SEC_PSectorMap sec, const char *name) {
 }
 
 PUBLIC bool SEC_IsInSector(SEC_PSectorMap sec, SEC_PSector s, uint32 x, uint32 y) {
+#ifdef __AMIGA__
+	// courtesy of Ken Silverman
+	int i, x1, y1, x2, y2;
+	unsigned int cnt;
+
+	cnt = 0;
+	for (i = 0; i < s->nv; i++)
+	{
+		SEC_PVertex v0, v1;
+
+		v0 = s->v[i].v0;
+		v1 = s->v[i].v1;
+
+		y1 = v0->y-y; y2 = v1->y-y;
+		if ((y1^y2) < 0)
+		{
+			x1 = v0->x-x; x2 = v1->x-x;
+			if ((x1^x2) >= 0) cnt ^= x1; else cnt ^= (x1*y2-x2*y1)^y2;
+		}
+	}
+	return(cnt>>31);
+#else
     int nhits = 0;
     int i;
 
@@ -170,6 +192,7 @@ PUBLIC bool SEC_IsInSector(SEC_PSectorMap sec, SEC_PSector s, uint32 x, uint32 y
         }
     }
     return (nhits & 1) == 1;
+#endif
 }
 
 
@@ -181,6 +204,16 @@ PUBLIC SEC_PSector SEC_FindSector(SEC_PSectorMap sec, SEC_PSector s, uint32 x, u
 
     if (s != NULL && SEC_IsInSector(sec, s, x, y))
         return s;
+#ifdef __AMIGA__
+	if (s != NULL) {
+		for (i = 0; i < s->nv; i++) {
+			ps = s->v[i].otherside;
+			if (SEC_IsInSector(sec, ps, x, y)) {
+				return ps;
+			}
+		}
+	}
+#endif
     ps = sec->secs + 1;
     for (i = 1; i < sec->ns; i++, ps++)
         if (ps != s && SEC_IsInSector(sec, ps, x, y))
@@ -482,6 +515,31 @@ PUBLIC void SEC_RenderSector(SEC_PSector s, int cx, int cy, F3D_PCamera cam) {
     }
     FSP_DumpObjs(cam, Map.trans, cx, cy);
 }
+
+/*
+void SEC_DebugDraw(SEC_PSector s, byte c) {
+	int i;
+
+	if (!s) return;
+
+	if (s->flags) {
+		for (i = 0; i < s->nv; i++) {
+			SEC_PVertex v0 = s->v[i].v0;
+
+			POLY_ScrapPoly[i].x = v0->x >> 8;
+			POLY_ScrapPoly[i].y = v0->y >> 9;
+		}
+		POLY_SolidDraw(POLY_ScrapPoly, s->nv, c);
+	}
+
+	for (i = 0; i < s->nv; i++) {
+		SEC_PVertex v0 = s->v[i].v0;
+		SEC_PVertex v1 = s->v[i].v1;
+
+		POLY_Line(v0->x >> 8, v0->y >> 9, v1->x >> 8, v1->y >> 9, 0);
+	}
+}
+*/
 
     // Little trick here. First render the sector 0, then all others.
 PUBLIC void SEC_Render(SEC_PSectorMap sec, SEC_PSector s, int cx, int cy, F3D_PCamera cam) {
