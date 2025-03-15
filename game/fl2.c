@@ -179,10 +179,12 @@ PRIVATE bool BasicInitData(void) {
 
     RND_Randomize(BIOS_Clock);
 
+#ifndef __AMIGA__
     if (BASE_CheckArg("novbl") > 0 || getenv("windir") != NULL)
         VBL_CompatibleMode = 70;
     else
         VBL_CompatibleMode = 0;
+#endif
 
     if ( (i = BASE_CheckArg("ticks")) > 0)
         if (isdigit(ArgV[i][0])) NET_MaxTicks = atoi(ArgV[i]);

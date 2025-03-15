@@ -25,7 +25,7 @@
 
 #include <SDI_compiler.h>
 
-#define FPS_COUNTER
+//#define FPS_COUNTER
 
 static byte vga_palette[3 * 256] = {
 #include "vga_palette.h"
@@ -322,7 +322,12 @@ static void showframe(void)
 		static int lastfps = 0;
 		static ULONG lasttime = 0;
 		ULONG timecount = ElapsedTime(&timeval);
-		int frametime = (int)((double)((timecount + lasttime) >> 1)*1000.0/65536.0);
+		int frametime = (timecount + lasttime) >> 1;
+#ifdef __HAVE_68881__
+		frametime = (int)((double)frametime*1000.0/65536.0);
+#else
+		frametime >>= 6; // TODO this is 2,4% slower
+#endif
 		int fps = (((1 << 16) / timecount) + lastfps) >> 1;
 		sprintf(buf, "%2d fps (%2d ms)", fps, frametime);
 		TEXT_Write(&FONT_Border, 0, 0, buf, 15);

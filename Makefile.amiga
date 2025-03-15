@@ -9,7 +9,8 @@ CPU ?= 060
 ifeq ($(CPU),060)
 ARCH = -m68060 -mhard-float -ffast-math
 else
-ARCH = -m68040 -msoft-float
+ARCH = -m68040 -mhard-float -ffast-math
+# -msoft-float
 endif
 
 PROGRAM = SpeedHaste.$(CPU)
@@ -47,7 +48,6 @@ AMIGA_SRC = \
 	amiga/amigfx.c \
 	amiga/dos.c \
 	amiga/fl.c \
-	amiga/fire.c \
 	amiga/sincos.c \
 	amiga/sqrt.c \
 	amiga/timer.c \
@@ -69,6 +69,7 @@ AMIGA_SRC = \
 #	amiga/vgac.c \
 #	amiga/llvesa.c \
 #	amiga/llscr.c \
+#	amiga/fire.c \
 
 GAME_SRC = \
 	game/3dfloor.c \
@@ -106,7 +107,6 @@ WCGSL_SRC = \
 	wcgsl/bitmap.c \
 	wcgsl/comms.c \
 	wcgsl/controls.c \
-	wcgsl/cspline.c \
 	wcgsl/cursor.c \
 	wcgsl/desktop.c \
 	wcgsl/graphics.c \
@@ -126,6 +126,9 @@ WCGSL_SRC = \
 	wcgsl/text.c \
 	wcgsl/vertdrwc.c \
 	wcgsl/vtal.c \
+
+#	wcgsl/cspline.c \
+
 
 SRCS := $(GAME_SRC) $(WCGSL_SRC) $(AMIGA_SRC)
 OBJS := $(filter %.o, $(SRCS:.c=.o) $(SRCS:.s=.o))
