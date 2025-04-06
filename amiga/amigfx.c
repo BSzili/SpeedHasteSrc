@@ -279,7 +279,7 @@ static int setvideomode(int x, int y, int c, int fs)
 		return -1;
 	}
 
-	//pointermem = (UWORD *)AllocVec(2 * 6, MEMF_CHIP | MEMF_CLEAR);
+	pointermem = (UWORD *)AllocVec(2 * 6, MEMF_CHIP | MEMF_CLEAR);
 	if (pointermem && window->Pointer != pointermem) {
 		SetPointer(window, pointermem, 1, 1, 0, 0);
 	}
