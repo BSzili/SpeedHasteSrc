@@ -136,7 +136,10 @@ GAME_PRec PUBLICFUNC GAME_Init(GAME_PSetup setup)
 
 				if (bits > 8) {
 					// fallback for 16-bit modes
-					audioID = 0x00020008; // Paula:Fast 8 bit stereo++
+					ULONG fallbackID = 0x00020008; // Paula:Fast 8 bit stereo++
+					if (AHI_GetAudioAttrs(fallbackID, NULL, TAG_DONE)) {
+						audioID = fallbackID;
+					}
 				}
                 if (!realtime || (stereo && !panning) || !volume || bits < 8 || channels < MAX_CHANNELS) {
                     audioID = AHI_BestAudioIDA(filterTags);
