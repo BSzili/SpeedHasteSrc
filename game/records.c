@@ -47,8 +47,10 @@ PUBLIC bool REC_Init(void) {
     if (REC_Best != NULL)
         return TRUE;
     if ( (f = fopen("records.lst", "rt")) == NULL)
+#ifndef __AMIGA__
         if ( (f = fopen(CFGDIR "\\records.lst", "rt")) == NULL)
             f = JCLIB_OpenText("records.lst");
+#endif
     if ( (f = JCLIB_OpenText("records.lst")) == NULL)
         BASE_Abort("Can't read RECORDS.LST file!");
     do {
@@ -136,9 +138,11 @@ PUBLIC void REC_Save(void) {
         return;
     f = fopen("records.lst", "wt");
     if (f == NULL) {
+#ifndef __AMIGA__
         mkdir(CFGDIR);
         f = fopen(CFGDIR "\\records.lst", "wt");
         if (f == NULL)
+#endif
             BASE_Abort("Can't write RECORDS.LST file!");
     }
 
